@@ -1,0 +1,21 @@
+# This file configures the static analysis as described in the
+# http://dart.dev/guides/language/analysis-options page.
+
+linter:
+  rules:
+    - always_use_package_imports
+    - avoid_slow_async_io
+    - unnecessary_await_in_return
+    - use_string_buffers
+    - prefer_const_constructors
+    - prefer_const_literals_to_create_immutables
+    - sort_child_properties_last
+    - camel_case_types
+    - library_prefixes
+    - non_constant_identifier_names
+    - prefer_final_fields
+    - prefer_is_empty
+    - prefer_is_not_empty
+    - annotate_overrides
+    - avoid_unnecessary_containers
+    - sized_box_for_whitespace

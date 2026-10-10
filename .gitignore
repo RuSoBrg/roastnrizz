@@ -1,0 +1,61 @@
+# Ficheiros de ambiente e segredos
+.env
+*.env.*
+key.properties
+*.pem
+*.key
+*.keystore
+*.jks
+
+# Cloudflare Wrangler (cache e segredos locais)
+.wrangler/
+.dev.vars
+
+# Ficheiros de configuração nativa com credenciais
+android/key.properties
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+
+# Diretórios de compilação e IDEs
+build/
+.dart_tool/
+.idea/
+.vscode/
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release

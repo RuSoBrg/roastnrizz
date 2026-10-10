@@ -1,0 +1,7 @@
+flutter_native_splash:
+  color: "#000000"
+  # Removendo todas as imagens para ter um arranque "black-only" imediato
+  android_12:
+    color: "#000000"
+  android: true
+  ios: true

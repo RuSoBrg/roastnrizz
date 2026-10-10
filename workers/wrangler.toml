@@ -1,0 +1,19 @@
+name = "roast-rizz-api"
+main = "src/index.js"
+compatibility_date = "2026-08-27"
+# REMOVER AZURE_DEPLOYMENT e AZURE_ENDPOINT
+[vars]
+APP_ENV = "prod"
+APP_CHECK_ENFORCED = "true"
+AZURE_DEPLOYMENT = "gpt-4o"
+AZURE_ENDPOINT = "https://a1256-ml1bfkfj-swedencentral.services.ai.azure.com"
+FIREBASE_PROJECT_ID = "roastapp-7ef73"
+
+[[kv_namespaces]]
+binding = "KV_CREDITS"
+id = "55441e3b72ec4130b0508f4f5ee10ee2"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "roastdb"
+database_id = "57f604e7-a78c-4c1b-acba-a8daa08d4552"

@@ -1,0 +1,11 @@
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/roast_n_rizz_logo.png"
+  
+  # Adaptive icons for Android 8.0+
+  # To avoid clipping, we add an 'inset' (padding) to the foreground.
+  # This makes the logo smaller within the icon area, so Android's circle mask won't cut it.
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/roast_n_rizz_logo.png"
+  adaptive_icon_foreground_inset: 16
