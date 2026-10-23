@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -389,13 +390,14 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      FirebaseCrashlytics.instance.log('submitPhoto: persona=$persona, lang=$languageCode, isRizz=$isRizzMode');
       // Ensure we are signed in anonymously first
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         user = (await FirebaseAuth.instance.signInAnonymously()).user;
       }
 
-      final authToken = await user?.getIdToken(true); // forceRefresh to avoid stale tokens
+      final authToken = await user?.getIdToken(); // cached; force-refresh only on 401 retry
       if (authToken == null) throw Exception("Failed to obtain Auth Token from Firebase");
 
       String? appCheckToken;
@@ -405,7 +407,7 @@ class HomeController extends ChangeNotifier {
         if (kDebugMode) debugPrint('AppCheck getToken failed: $e');
       }
 
-      final apiResponse = await GetRoastCall.call(
+      var apiResponse = await GetRoastCall.call(
         photoBase64: base64Encode(imageBytes),
         authToken: authToken,
         language: languageCode,
@@ -413,6 +415,21 @@ class HomeController extends ChangeNotifier {
         appCheckToken: appCheckToken,
         isRizz: isRizzMode,
       );
+
+      // If 401 Unauthorized, force-refresh token and retry once
+      if (apiResponse.statusCode == 401) {
+        final freshToken = await user?.getIdToken(true);
+        if (freshToken != null) {
+          apiResponse = await GetRoastCall.call(
+            photoBase64: base64Encode(imageBytes),
+            authToken: freshToken,
+            language: languageCode,
+            persona: persona,
+            appCheckToken: appCheckToken,
+            isRizz: isRizzMode,
+          );
+        }
+      }
 
       if (apiResponse.succeeded) {
         _analytics.logEvent(name: 'generate_content', parameters: {

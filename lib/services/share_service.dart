@@ -94,6 +94,8 @@ class ShareService {
 
     final rendered = await recorder.endRecording().toImage(width.round(), height.round());
     final data = await rendered.toByteData(format: ui.ImageByteFormat.png);
+    sourceImage.dispose();
+    rendered.dispose();
     return ShareImageResult(pngBytes: data!.buffer.asUint8List());
   }
 }

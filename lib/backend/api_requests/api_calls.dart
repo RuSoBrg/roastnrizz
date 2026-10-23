@@ -53,6 +53,7 @@ class GetRoastCall {
       final Map<String, String> headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $authToken',
+        'Connection': 'keep-alive',
         if (appCheckToken != null) 'X-Firebase-AppCheck': appCheckToken,
       };
 
@@ -86,6 +87,7 @@ class GetRoastCall {
         uri,
         headers: {
           'Authorization': 'Bearer $authToken',
+          'Connection': 'keep-alive',
           if (appCheckToken != null) 'X-Firebase-AppCheck': appCheckToken,
         },
       ).timeout(_requestTimeout);
@@ -109,6 +111,7 @@ class GetRoastCall {
         uri,
         headers: {
           'Authorization': 'Bearer $authToken',
+          'Connection': 'keep-alive',
           if (appCheckToken != null) 'X-Firebase-AppCheck': appCheckToken,
         },
       ).timeout(_requestTimeout);

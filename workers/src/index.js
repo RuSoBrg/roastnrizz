@@ -30,7 +30,10 @@ export default {
 
     const uid = await authenticateUser(request, env);
     if (!uid) {
-      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "UNAUTHORIZED", message: "Invalid or expired authentication token" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
     }
 
     // 4. Authenticated API Routes
@@ -83,7 +86,12 @@ async function handleAppRequest(request, env, clientIp, uid) {
     const data = await request.json();
     const { persona, isRizz, language, photoBase64 } = data;
 
-    if (!photoBase64 || photoBase64.length > 5000000) return new Response("Invalid image", { status: 413, headers: corsHeaders });
+    if (!photoBase64 || photoBase64.length > 5000000) {
+      return new Response(JSON.stringify({ error: "IMAGE_TOO_LARGE", message: "Image exceeds 5MB limit" }), {
+        status: 413,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
 
     const rateKey = `rate_${clientIp}`;
     const rawRate = await env.KV_CREDITS.get(rateKey);
@@ -127,7 +135,10 @@ async function handleAppRequest(request, env, clientIp, uid) {
 
   } catch (err) {
     console.error("Worker error handleAppRequest:", err);
-    return new Response("Internal Error", { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: "INTERNAL_ERROR", message: "Failed to process request" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders }
+    });
   }
 }
 
@@ -152,7 +163,10 @@ async function handleSyncCredits(request, env, uid) {
     return new Response(JSON.stringify({ success: true, credits: results[0]?.credits || 3 }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
   } catch (err) {
     console.error("Sync credits error:", err);
-    return new Response("Error", { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: "INTERNAL_ERROR", message: "Failed to sync credits" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders }
+    });
   }
 }
 
@@ -161,6 +175,14 @@ async function handleSyncCredits(request, env, uid) {
  */
 async function handleClaimReward(request, env, uid) {
   try {
+    // Rate limit: max 5 claims per day per UID
+    const claimKey = `claim_${uid}`;
+    const claims = Number.parseInt(await env.KV_CREDITS.get(claimKey) || "0", 10);
+    if (claims >= 5) {
+      return new Response(JSON.stringify({ error: "Claim limit reached" }), { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    await env.KV_CREDITS.put(claimKey, (claims + 1).toString(), { expirationTtl: 86400 });
+
     const today = new Date().toISOString().split('T')[0];
     const { results } = await env.DB.prepare(`
       INSERT INTO users (user_id, credits, last_reset)
@@ -174,7 +196,10 @@ async function handleClaimReward(request, env, uid) {
     return new Response(JSON.stringify({ success: true, credits: results[0].credits }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
   } catch (err) {
     console.error("Claim reward error:", err);
-    return new Response("Error", { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: "INTERNAL_ERROR", message: "Failed to claim reward" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders }
+    });
   }
 }
 
@@ -207,6 +232,10 @@ async function handleAdMobSsv(request, env) {
 
 async function verifyFirebaseAuth(token, env) {
   try {
+    if (!env.FIREBASE_PROJECT_ID) {
+      console.error("FIREBASE_PROJECT_ID not configured in environment!");
+      return null;
+    }
     const parts = token.split(".");
     if (parts.length !== 3) return null;
     let base64 = parts[1].replaceAll("-", "+").replaceAll("_", "/");
@@ -338,6 +367,9 @@ async function verifyAdMobSignature(env, fullQueryString, signature, keyId) {
  * Calls Azure OpenAI service with the improved expert prompt.
  */
 async function generateAiContent(env, { persona, isRizz, language, photoBase64 }) {
+  // Sanitize persona to prevent prompt injection
+  const safeName = (persona || "comedian").replace(/[^\p{L}\p{N}\s\-'().,]/gu, "").substring(0, 80).trim() || "comedian";
+
   const languageMap = {
     'pt-PT': 'Portuguese (Portugal)', 'pt-BR': 'Portuguese (Brazil)', 'es': 'Spanish',
     'fr': 'French', 'de': 'German', 'it': 'Italian', 'ru': 'Russian', 'zh': 'Chinese',
@@ -349,14 +381,14 @@ async function generateAiContent(env, { persona, isRizz, language, photoBase64 }
   const targetLanguage = languageMap[language] || language || 'English';
   const mode = isRizz ? "Rizz" : "Roast";
 
-  const systemPrompt = `You are "${persona}". Your mission is to deliver a ${mode} of a photo sent by the user, written entirely in your own voice and personality.
+  const systemPrompt = `You are "${safeName}". Your mission is to deliver a ${mode} of a photo sent by the user, written entirely in your own voice and personality.
 
   ## OUTPUT LANGUAGE
   Write your final response exclusively in ${targetLanguage}. Do not mix in other languages.
 
-  ## VOICE OF ${persona}
-  - Use the vocabulary, slang, tone, and speech rhythm typical of ${persona}.
-  - Include at least ONE recognizable catchphrase or signature expression associated with ${persona}, adapted to fit the image.
+  ## VOICE OF ${safeName}
+  - Use the vocabulary, slang, tone, and speech rhythm typical of ${safeName}.
+  - Include at least ONE recognizable catchphrase or signature expression associated with ${safeName}, adapted to fit the image.
   - Never reveal that you are an AI or break character.
 
   ## READING THE IMAGE

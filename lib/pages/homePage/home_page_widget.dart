@@ -134,9 +134,9 @@ class _HomePageWidgetState extends State<HomePageWidget> {
       try {
         final pickedFile = await _picker.pickImage(
           source: source,
-          imageQuality: 75,
-          maxWidth: 1600,
-          maxHeight: 1600,
+          imageQuality: 65,
+          maxWidth: 1200,
+          maxHeight: 1200,
         );
         await _loadPickedImage(pickedFile);
       } catch (e) {
