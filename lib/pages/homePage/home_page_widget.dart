@@ -3,7 +3,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:roast_n_rizz/config/app_config.dart';
@@ -97,52 +96,17 @@ class _HomePageWidgetState extends State<HomePageWidget> {
   Future<void> _pickImage() async {
     final l10n = AppLocalizations.of(context);
 
-    final status = await Permission.camera.request();
-    if (status.isPermanentlyDenied) {
-      if (!mounted) return;
-      _showError(l10n.cameraPermissionDenied);
-      openAppSettings();
-      return;
-    }
-    if (!status.isGranted) return;
-
-    if (!mounted) return;
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: const Color(0xFF24242A),
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colors.white),
-              title: Text(l10n.camera,
-                  style: const TextStyle(color: Colors.white)),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.white),
-              title: Text(l10n.gallery,
-                  style: const TextStyle(color: Colors.white)),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (source != null) {
-      try {
-        final pickedFile = await _picker.pickImage(
-          source: source,
-          imageQuality: 65,
-          maxWidth: 1200,
-          maxHeight: 1200,
-        );
-        await _loadPickedImage(pickedFile);
-      } catch (e) {
-        if (kDebugMode) debugPrint('_HomePageWidgetState._pickImage: $e');
-        _showError(l10n.imageLoadError);
-      }
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 65,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      await _loadPickedImage(pickedFile);
+    } catch (e) {
+      if (kDebugMode) debugPrint('_HomePageWidgetState._pickImage: $e');
+      _showError(l10n.imageLoadError);
     }
   }
 
